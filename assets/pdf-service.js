@@ -8,8 +8,7 @@
   async function loadFile(file) {
     assertLibraries();
     var bytes = new Uint8Array(await file.arrayBuffer());
-    // Disable workers because Android Chrome blocks worker loading from some file:// locations.
-    root.pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+    root.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', root.location.href).href;
     var previewDocument = await root.pdfjsLib.getDocument({ data: bytes }).promise;
     return { bytes: bytes, previewDocument: previewDocument };
   }
