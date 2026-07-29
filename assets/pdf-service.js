@@ -52,5 +52,22 @@
     return output.save();
   }
 
-  root.PdfService = { loadFile: loadFile, getPageDetails: getPageDetails, renderPage: renderPage, createResizedPdf: createResizedPdf };
+  async function createPaginatedA4Pdf(bytes, pageDetails, getTarget) {
+    assertLibraries();
+    var source = await root.PDFLib.PDFDocument.load(bytes, { ignoreEncryption: false });
+    var output = await root.PDFLib.PDFDocument.create();
+    var sourcePages = await output.embedPdf(source, source.getPageIndices());
+    for (var index = 0; index < sourcePages.length; index++) {
+      var target = getTarget(pageDetails[index]);
+      var sheets = root.PaperLayout.paginateVertically(sourcePages[index].width, sourcePages[index].height, target.widthPoints, target.heightPoints);
+      for (var sheetIndex = 0; sheetIndex < sheets.length; sheetIndex++) {
+        var sheet = sheets[sheetIndex];
+        var outputPage = output.addPage([target.widthPoints, target.heightPoints]);
+        outputPage.drawPage(sourcePages[index], { x: 0, y: target.heightPoints - (sheet.sourceTop + sheet.sourceHeight) * sheet.scale, width: sourcePages[index].width * sheet.scale, height: sourcePages[index].height * sheet.scale });
+      }
+    }
+    return output.save();
+  }
+
+  root.PdfService = { loadFile: loadFile, getPageDetails: getPageDetails, renderPage: renderPage, createResizedPdf: createResizedPdf, createPaginatedA4Pdf: createPaginatedA4Pdf };
 }(this));

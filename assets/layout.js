@@ -25,7 +25,17 @@
     return { width: Math.round(width * scale), height: Math.round(height * scale), scale: round(scale, 4) };
   }
 
-  var api = { fitInside: fitInside, resolveTargetSize: resolveTargetSize, fitPreviewCanvas: fitPreviewCanvas };
+  function paginateVertically(sourceWidth, sourceHeight, targetWidth, targetHeight) {
+    var scale = targetWidth / sourceWidth;
+    var sourceSheetHeight = targetHeight / scale;
+    var sheets = [];
+    for (var sourceTop = 0; sourceTop < sourceHeight; sourceTop += sourceSheetHeight) {
+      sheets.push({ sourceTop: sourceTop, sourceHeight: Math.min(sourceSheetHeight, sourceHeight - sourceTop), scale: scale });
+    }
+    return sheets;
+  }
+
+  var api = { fitInside: fitInside, resolveTargetSize: resolveTargetSize, fitPreviewCanvas: fitPreviewCanvas, paginateVertically: paginateVertically };
   root.PaperLayout = api;
   if (typeof module !== 'undefined') module.exports = api;
 }(this));
