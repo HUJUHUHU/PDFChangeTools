@@ -25,14 +25,29 @@
     return { width: Math.round(width * scale), height: Math.round(height * scale), scale: round(scale, 4) };
   }
 
-  function paginateVertically(sourceWidth, sourceHeight, targetWidth, targetHeight) {
+  function paginateVertically(sourceWidth, sourceHeight, targetWidth, targetHeight, textRows) {
     var scale = targetWidth / sourceWidth;
     var sourceSheetHeight = targetHeight / scale;
     var sheets = [];
-    for (var sourceTop = 0; sourceTop < sourceHeight; sourceTop += sourceSheetHeight) {
-      sheets.push({ sourceTop: sourceTop, sourceHeight: Math.min(sourceSheetHeight, sourceHeight - sourceTop), scale: scale });
+    var sourceTop = 0;
+    while (sourceTop < sourceHeight) {
+      var idealBottom = Math.min(sourceTop + sourceSheetHeight, sourceHeight);
+      var sourceBottom = chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows || []);
+      sheets.push({ sourceTop: sourceTop, sourceHeight: sourceBottom - sourceTop, scale: scale });
+      sourceTop = sourceBottom;
     }
     return sheets;
+  }
+
+  function chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows) {
+    if (idealBottom >= sourceHeight || !textRows.length) return idealBottom;
+    var best = null;
+    for (var index = 0; index < textRows.length; index++) {
+      var row = textRows[index];
+      if (row.top <= sourceTop + 1 || row.top >= idealBottom) continue;
+      if (!best || row.top > best) best = row.top;
+    }
+    return best && best > sourceTop ? best : idealBottom;
   }
 
   function getPaginationY(sourceHeight, targetHeight, sheet) {

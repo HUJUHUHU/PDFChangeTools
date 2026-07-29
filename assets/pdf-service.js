@@ -19,9 +19,27 @@
     for (var pageNumber = 1; pageNumber <= previewDocument.numPages; pageNumber++) {
       var page = await previewDocument.getPage(pageNumber);
       var viewport = page.getViewport({ scale: 1 });
-      details.push(root.PaperSizes.describePage(viewport.width, viewport.height));
+      var detail = root.PaperSizes.describePage(viewport.width, viewport.height);
+      detail.textRows = await getTextRows(page, viewport.height);
+      details.push(detail);
     }
     return details;
+  }
+
+  async function getTextRows(page, pageHeight) {
+    var textContent = await page.getTextContent();
+    var rowsByTop = {};
+    for (var index = 0; index < textContent.items.length; index++) {
+      var item = textContent.items[index];
+      if (!item.str || !item.str.trim()) continue;
+      var top = pageHeight - item.transform[5] - Math.abs(item.height || 0);
+      var key = Math.round(top);
+      rowsByTop[key] = { top: key, bottom: key + Math.max(1, Math.abs(item.height || 0)) };
+    }
+    var rows = [];
+    for (var rowKey in rowsByTop) rows.push(rowsByTop[rowKey]);
+    rows.sort(function (left, right) { return left.top - right.top; });
+    return rows;
   }
 
   async function renderPage(previewDocument, pageNumber, canvas, targetWidth, targetHeight, placement) {
@@ -60,7 +78,7 @@
     var sourcePages = await output.embedPdf(source, source.getPageIndices());
     for (var index = 0; index < sourcePages.length; index++) {
       var target = getTarget(pageDetails[index]);
-      var sheets = root.PaperLayout.paginateVertically(sourcePages[index].width, sourcePages[index].height, target.widthPoints, target.heightPoints);
+      var sheets = root.PaperLayout.paginateVertically(sourcePages[index].width, sourcePages[index].height, target.widthPoints, target.heightPoints, pageDetails[index].textRows);
       for (var sheetIndex = 0; sheetIndex < sheets.length; sheetIndex++) {
         var sheet = sheets[sheetIndex];
         var outputPage = output.addPage([target.widthPoints, target.heightPoints]);
