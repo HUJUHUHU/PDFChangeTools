@@ -42,12 +42,18 @@
   function chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows) {
     if (idealBottom >= sourceHeight || !textRows.length) return idealBottom;
     var best = null;
+    var previousBottom = sourceTop;
     for (var index = 0; index < textRows.length; index++) {
       var row = textRows[index];
-      if (row.top <= sourceTop + 1 || row.top >= idealBottom) continue;
-      if (!best || row.top > best) best = row.top;
+      if (row.bottom <= sourceTop + 1) continue;
+      var gapStart = Math.max(previousBottom, sourceTop);
+      var gapEnd = row.top;
+      var midpoint = (gapStart + gapEnd) / 2;
+      if (gapEnd > gapStart && midpoint > sourceTop + 1 && midpoint <= idealBottom) best = midpoint;
+      if (row.top > idealBottom) break;
+      previousBottom = Math.max(previousBottom, row.bottom);
     }
-    return best && best > sourceTop ? best : idealBottom;
+    return best !== null ? best : idealBottom;
   }
 
   function getPaginationY(sourceHeight, targetHeight, sheet) {
