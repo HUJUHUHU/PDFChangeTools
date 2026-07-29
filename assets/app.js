@@ -1,0 +1,74 @@
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { file: null, bytes: null, pdf: null, pages: [], pageIndex: 0, renderId: 0, busy: false };
+  var fileInput = $('pdf-file'); var paperSelect = $('paper-size'); var orientationSelect = $('orientation');
+
+  function setStatus(message, error) { var el = $('status'); el.textContent = message; el.className = error ? 'status error' : 'status'; }
+  function mmToPoints(mm) { return mm * 72 / 25.4; }
+  function getSelectedBaseSize() {
+    if (paperSelect.value !== 'Custom') return PaperSizes.getTargetSize(paperSelect.value);
+    var validation = PaperSizes.validateCustomSize($('custom-width').value, $('custom-height').value);
+    if (!validation.valid) throw new Error('自定义宽高必须在 20 至 2000 mm 之间。');
+    return validation;
+  }
+  function getTarget(page) {
+    var target = PaperLayout.resolveTargetSize(getSelectedBaseSize(), orientationSelect.value, page.orientation);
+    return { widthPoints: mmToPoints(target.widthMm), heightPoints: mmToPoints(target.heightMm), label: target.widthMm + ' x ' + target.heightMm + ' mm' };
+  }
+  function updateControls() {
+    var ready = !!state.pdf && !state.busy;
+    $('download-pdf').disabled = !ready;
+    $('previous-page').disabled = !ready || state.pageIndex === 0;
+    $('next-page').disabled = !ready || state.pageIndex >= state.pages.length - 1;
+    $('page-indicator').textContent = state.pdf ? (state.pageIndex + 1) + ' / ' + state.pages.length : '0 / 0';
+  }
+  function updateDetails() {
+    if (!state.pdf) return;
+    var page = state.pages[state.pageIndex];
+    $('page-count').textContent = state.pages.length + ' 页';
+    $('document-paper').textContent = PaperSizes.summarizePages(state.pages);
+    $('current-paper').textContent = page.paperName + '，' + page.widthMm + ' x ' + page.heightMm + ' mm，' + (page.orientation === 'landscape' ? '横向' : '纵向');
+  }
+  async function renderPreview() {
+    if (!state.pdf) return;
+    var renderId = ++state.renderId; var page = state.pages[state.pageIndex]; var target;
+    try { target = getTarget(page); } catch (error) { setStatus(error.message, true); return; }
+    var canvas = $('preview-canvas'); var pixelSize = PaperLayout.fitPreviewCanvas(target.widthPoints, target.heightPoints, Math.min(window.devicePixelRatio || 1, 2), 1600);
+    canvas.width = pixelSize.width; canvas.height = pixelSize.height;
+    canvas.style.aspectRatio = target.widthPoints + ' / ' + target.heightPoints;
+    var placement = PaperLayout.fitInside(page.widthPoints, page.heightPoints, target.widthPoints, target.heightPoints);
+    setStatus('正在渲染预览...');
+    await PdfService.renderPage(state.pdf, state.pageIndex + 1, canvas, target.widthPoints, target.heightPoints, placement);
+    if (renderId !== state.renderId) return;
+    $('preview-label').textContent = target.label;
+    setStatus('预览已更新。'); updateControls();
+  }
+  async function handleFile() {
+    var file = fileInput.files[0];
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { setStatus('请选择 PDF 文件。', true); return; }
+    state.busy = true; updateControls(); setStatus('正在读取 PDF...');
+    try {
+      if (state.pdf && state.pdf.destroy) await state.pdf.destroy();
+      var loaded = await PdfService.loadFile(file); state.file = file; state.bytes = loaded.bytes; state.pdf = loaded.previewDocument; state.pages = await PdfService.getPageDetails(state.pdf); state.pageIndex = 0;
+      $('file-name').textContent = file.name; updateDetails(); await renderPreview();
+    } catch (error) { setStatus('无法打开此 PDF：' + error.message, true); }
+    state.busy = false; updateControls();
+  }
+  async function download() {
+    if (!state.pdf || state.busy) return;
+    state.busy = true; updateControls(); setStatus('正在生成 PDF，请勿关闭页面...');
+    try {
+      var bytes = await PdfService.createResizedPdf(state.bytes, state.pages, getTarget); var blob = new Blob([bytes], { type: 'application/pdf' });
+      var name = state.file.name.replace(/\.pdf$/i, '') + '_' + (paperSelect.value === 'Custom' ? '自定义尺寸' : paperSelect.value) + '.pdf';
+      var link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(function () { URL.revokeObjectURL(link.href); }, 1000);
+      setStatus('已生成 PDF，请在浏览器下载记录中查看。');
+    } catch (error) { setStatus('生成失败：' + error.message, true); }
+    state.busy = false; updateControls();
+  }
+  fileInput.addEventListener('change', handleFile); paperSelect.addEventListener('change', function () { $('custom-fields').hidden = paperSelect.value !== 'Custom'; renderPreview(); });
+  orientationSelect.addEventListener('change', renderPreview); $('custom-width').addEventListener('input', renderPreview); $('custom-height').addEventListener('input', renderPreview);
+  $('previous-page').addEventListener('click', function () { state.pageIndex--; updateDetails(); renderPreview(); }); $('next-page').addEventListener('click', function () { state.pageIndex++; updateDetails(); renderPreview(); }); $('download-pdf').addEventListener('click', download);
+  updateControls();
+}());

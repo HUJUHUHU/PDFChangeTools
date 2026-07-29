@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12543d">
+  <title>PDF 纸张转换</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">ANDROID 离线工具</p>
+      <h1>PDF 纸张转换</h1>
+      <p>文件只在本机浏览器中处理。</p>
+    </header>
+
+    <section class="panel file-panel" aria-labelledby="file-title">
+      <h2 id="file-title">选择 PDF</h2>
+      <label class="file-button" for="pdf-file">从手机选择 PDF</label>
+      <input id="pdf-file" type="file" accept="application/pdf,.pdf">
+      <p id="file-name" class="muted">尚未选择文件</p>
+    </section>
+
+    <section class="panel" aria-labelledby="document-title">
+      <h2 id="document-title">识别结果</h2>
+      <dl class="details">
+        <div><dt>页数</dt><dd id="page-count">-</dd></div>
+        <div><dt>文档纸张</dt><dd id="document-paper">-</dd></div>
+        <div><dt>当前页</dt><dd id="current-paper">-</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel" aria-labelledby="target-title">
+      <h2 id="target-title">目标纸张</h2>
+      <div class="field-grid">
+        <label>纸张规格<select id="paper-size"><option value="A0">A0</option><option value="A1">A1</option><option value="A2">A2</option><option value="A3">A3</option><option value="A4" selected>A4</option><option value="A5">A5</option><option value="Custom">自定义</option></select></label>
+        <label>页面方向<select id="orientation"><option value="keep">保持原方向</option><option value="portrait">纵向</option><option value="landscape">横向</option></select></label>
+      </div>
+      <div id="custom-fields" class="field-grid" hidden>
+        <label>宽度（mm）<input id="custom-width" type="number" inputmode="decimal" min="20" max="2000" value="210"></label>
+        <label>高度（mm）<input id="custom-height" type="number" inputmode="decimal" min="20" max="2000" value="297"></label>
+      </div>
+    </section>
+
+    <section class="panel preview-panel" aria-labelledby="preview-title">
+      <div class="section-heading"><h2 id="preview-title">转换预览</h2><span id="preview-label">尚未加载</span></div>
+      <div class="preview-wrap"><canvas id="preview-canvas" aria-label="PDF 纸张转换预览"></canvas></div>
+      <div class="pager">
+        <button id="previous-page" type="button" aria-label="上一页" disabled>&larr;</button>
+        <span id="page-indicator">0 / 0</span>
+        <button id="next-page" type="button" aria-label="下一页" disabled>&rarr;</button>
+      </div>
+    </section>
+
+    <p id="status" class="status" role="status">请选择手机中的 PDF 文件。</p>
+    <button id="download-pdf" class="download-button" type="button" disabled>生成并下载 PDF</button>
+  </main>
+
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="assets/paper-sizes.js"></script>
+  <script src="assets/layout.js"></script>
+  <script src="assets/pdf-service.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
