@@ -8,8 +8,9 @@
   async function loadFile(file) {
     assertLibraries();
     var bytes = new Uint8Array(await file.arrayBuffer());
+    var previewBytes = bytes.slice();
     root.pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('vendor/pdf.worker.min.js', root.location.href).href;
-    var previewDocument = await root.pdfjsLib.getDocument({ data: bytes }).promise;
+    var previewDocument = await root.pdfjsLib.getDocument({ data: previewBytes }).promise;
     return { bytes: bytes, previewDocument: previewDocument };
   }
 
