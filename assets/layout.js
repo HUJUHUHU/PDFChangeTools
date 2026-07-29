@@ -34,26 +34,33 @@
       var idealBottom = Math.min(sourceTop + sourceSheetHeight, sourceHeight);
       var sourceBottom = chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows || []);
       sheets.push({ sourceTop: sourceTop, sourceHeight: sourceBottom - sourceTop, scale: scale });
-      sourceTop = sourceBottom;
+      sourceTop = getNextSheetTop(sourceTop, sourceBottom, textRows || []);
     }
     return sheets;
   }
 
   function chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows) {
     if (idealBottom >= sourceHeight || !textRows.length) return idealBottom;
-    var best = null;
+    var lastRow = null;
     var previousBottom = sourceTop;
     for (var index = 0; index < textRows.length; index++) {
       var row = textRows[index];
       if (row.bottom <= sourceTop + 1) continue;
       var gapStart = Math.max(previousBottom, sourceTop);
       var gapEnd = row.top;
-      var midpoint = (gapStart + gapEnd) / 2;
-      if (gapEnd > gapStart && midpoint > sourceTop + 1 && midpoint <= idealBottom) best = midpoint;
+      if (row.bottom <= idealBottom) lastRow = { top: row.top, bottom: row.bottom };
       if (row.top > idealBottom) break;
       previousBottom = Math.max(previousBottom, row.bottom);
     }
-    return best !== null ? best : idealBottom;
+    return lastRow ? lastRow.bottom : idealBottom;
+  }
+
+  function getNextSheetTop(sourceTop, sourceBottom, textRows) {
+    for (var index = 0; index < textRows.length; index++) {
+      var row = textRows[index];
+      if (row.bottom === sourceBottom && row.top > sourceTop) return row.top;
+    }
+    return sourceBottom;
   }
 
   function getPaginationY(sourceHeight, targetHeight, sheet) {
