@@ -63,7 +63,7 @@
       for (var sheetIndex = 0; sheetIndex < sheets.length; sheetIndex++) {
         var sheet = sheets[sheetIndex];
         var outputPage = output.addPage([target.widthPoints, target.heightPoints]);
-        outputPage.drawPage(sourcePages[index], { x: 0, y: target.heightPoints - (sheet.sourceTop + sheet.sourceHeight) * sheet.scale, width: sourcePages[index].width * sheet.scale, height: sourcePages[index].height * sheet.scale });
+        outputPage.drawPage(sourcePages[index], { x: 0, y: root.PaperLayout.getPaginationY(sourcePages[index].height, target.heightPoints, sheet), width: sourcePages[index].width * sheet.scale, height: sourcePages[index].height * sheet.scale });
       }
     }
     return output.save();

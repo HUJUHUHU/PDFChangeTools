@@ -35,7 +35,11 @@
     return sheets;
   }
 
-  var api = { fitInside: fitInside, resolveTargetSize: resolveTargetSize, fitPreviewCanvas: fitPreviewCanvas, paginateVertically: paginateVertically };
+  function getPaginationY(sourceHeight, targetHeight, sheet) {
+    return targetHeight - sourceHeight * sheet.scale + sheet.sourceTop * sheet.scale;
+  }
+
+  var api = { fitInside: fitInside, resolveTargetSize: resolveTargetSize, fitPreviewCanvas: fitPreviewCanvas, paginateVertically: paginateVertically, getPaginationY: getPaginationY };
   root.PaperLayout = api;
   if (typeof module !== 'undefined') module.exports = api;
 }(this));
