@@ -34,7 +34,7 @@
       var idealBottom = Math.min(sourceTop + sourceSheetHeight, sourceHeight);
       var sourceBottom = chooseSafeBreak(sourceTop, idealBottom, sourceHeight, textRows || []);
       sheets.push({ sourceTop: sourceTop, sourceHeight: sourceBottom - sourceTop, scale: scale });
-      sourceTop = getNextSheetTop(sourceTop, sourceBottom, textRows || []);
+      sourceTop = sourceBottom;
     }
     return sheets;
   }
@@ -53,14 +53,6 @@
       previousBottom = Math.max(previousBottom, row.bottom);
     }
     return lastRow ? lastRow.bottom : idealBottom;
-  }
-
-  function getNextSheetTop(sourceTop, sourceBottom, textRows) {
-    for (var index = 0; index < textRows.length; index++) {
-      var row = textRows[index];
-      if (row.bottom === sourceBottom && row.top > sourceTop) return row.top;
-    }
-    return sourceBottom;
   }
 
   function getPaginationY(sourceHeight, targetHeight, sheet) {
